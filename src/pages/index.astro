@@ -1,7 +1,6 @@
 ---
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
-import { date } from "astro:schema";
 
 const [stores, products] = await Promise.all([
   getCollection("stores"),
@@ -15,15 +14,12 @@ if (!store) {
 }
 
 const storeData = store.data;
-const activeProducts = products;
 
 const getImage = (media: any) => {
   if (!media) return null;
   const url = media.formats?.medium?.url || media.url;
   if (!url) return null;
-  return url.startsWith("http")
-    ? url
-    : `${import.meta.env.PUBLIC_STRAPI_URL || "https://api.markket.place"}${url}`;
+  return url.startsWith("https") ? url : `/${url}`;
 };
 
 const formatPrice = (price: number | string) =>
@@ -35,63 +31,128 @@ const formatPrice = (price: number | string) =>
 
 const description =
   storeData.description ||
-  "Unexpected finds, useful things, and exceptional value from our warehouse and partners.";
+  "Friendliest sliding door parts in NoHo\n\nSliding Door parts for contractors and resellers";
+
+const descParagraphs =
+  typeof description === "string"
+    ? description.split(/\n\s*\n|\n/).filter((line) => line.trim().length > 0)
+    : [description];
 ---
 
 <Layout
-  title={storeData.seo?.metaTitle || `${storeData.title} | Markkët`}
+  title={(storeData?.seo as any)?.metaTitle ||
+    `${storeData?.title} | Architectural Hardware`}
   seo={{
-    page_description: storeData.seo?.metaDescription || description,
+    page_description: (storeData.seo as any)?.metaDescription || description,
+    featured_image: getImage(storeData?.cover || storeData.logo),
+    featured_image_alt: storeData.title as string,
+    canonical_url: `${storeData.slug}.markket.place`,
+    no_index: false,
+    open_graph_type: "website",
+    author_twitter_handle: "",
   }}
 >
-  <main>
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero-content">
-        <p class="eyebrow">{store.data.title}</p>
-        <h1>Good finds.<br /><em>Unexpected places.</em></h1>
-        <p class="hero-description">
-          A changing collection of warehouse finds, overstock, previous
-          collections, and interesting things worth discovering.
+  <main
+    class="min-h-screen bg-[#faf8f5] text-stone-900 font-sans selection:bg-stone-900 selection:text-stone-100"
+  >
+    <!-- Top Utility Bar -->
+    <div
+      class="border-b border-stone-200/80 bg-white/60 backdrop-blur px-6 py-2.5 text-xs font-mono text-stone-500 flex flex-wrap justify-between items-center gap-2"
+    >
+      <div class="flex items-center gap-2 tracking-wide">
+        <span
+          class="font-medium text-stone-800 uppercase tracking-widest text-[10px]"
+        >
+          ^__^
+        </span>
+        <span class="text-stone-300">/</span>
+      </div>
+    </div>
+
+    <!-- Hero Header -->
+    <section class="max-w-6xl mx-auto px-6 pt-16 pb-14 sm:pt-24 sm:pb-20">
+      <div class="max-w-3xl space-y-6">
+        <p class="font-mono text-xs uppercase tracking-widest text-stone-500">
+          {store.data.title || "Sliding Hardware"}
         </p>
-        <a class="button" href="/products">Explore the collection</a>
-      </div>
-      <div class="hero-note">
-        <span>Exclusive</span>
-        <span>Warehouse Deals</span>
-      </div>
-    </section>
 
-    <!-- Introduction -->
-    <section class="intro">
-      <p class="eyebrow">NOT YOUR USUAL STORE</p>
-      <h2>There's always something<br />worth a second look.</h2>
-      <p>Special products for web surfers</p>
-    </section>
+        <h1
+          class="text-4xl sm:text-6xl font-light tracking-tight text-stone-950 font-serif leading-[1.08]"
+        >
+          Wholesale Lux
+        </h1>
 
-    <!-- Products -->
-    <section class="collection" id="collection">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Catalogue</p>
-          <h2>Be found.</h2>
+        <!-- Dynamic Description -->
+        <div
+          class="text-stone-600 text-base sm:text-lg leading-relaxed space-y-2 pt-2 border-l border-stone-300 pl-4"
+        >
+          {
+            descParagraphs.map((paragraph, i) => (
+              <p
+                class={
+                  i === 0 ? "text-stone-900 font-medium" : "text-stone-600"
+                }
+              >
+                {paragraph}
+              </p>
+            ))
+          }
         </div>
-        <span>{activeProducts.length} items</span>
+
+        <div class="pt-4">
+          <a
+            href="#collection"
+            class="inline-flex items-center gap-2 px-6 py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 text-xs font-mono tracking-widest uppercase transition-colors"
+          >
+            Explore Catalogue <span>↓</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Catalogue Section -->
+    <section class="max-w-6xl mx-auto px-6 pb-24" id="collection">
+      <div
+        class="flex flex-row justify-between items-end pb-4 mb-8 border-b border-stone-200"
+      >
+        <div>
+          <span
+            class="font-mono text-[11px] text-stone-400 uppercase tracking-widest block mb-1"
+          >
+            Catalogue
+          </span>
+          <h2 class="text-xl sm:text-2xl font-serif font-normal text-stone-900">
+            Latest Updates
+          </h2>
+        </div>
+        <span class="font-mono text-xs text-stone-400">
+          more than {products.length} items
+        </span>
       </div>
 
       {
-        activeProducts.length > 0 ? (
-          <div class="product-grid">
-            {activeProducts.map(({ data }) => {
+        products.length > 0 ? (
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+            {products.map(({ data }, index) => {
               const image = getImage(data.thumbnail);
-              const price = data.usd_price ?? data.prices?.[0]?.price;
-              const title = data.name || data.seo.metaTitle || "Product";
+              const price = data.usd_price ?? (data.prices as any)?.[0]?.price;
+              const title =
+                data.name || (data.seo as any)?.metaTitle || "Products";
               const productSlug = data.slug;
+              console.log({
+                index,
+                name: data.name,
+                _______________________id: data.documentId,
+              });
+              const partDesc =
+                (data.seo as any)?.metaDescription ||
+                (data as any)?.description ||
+                "";
 
               return (
-                <article class="product-card">
+                <article class="group flex flex-col justify-between space-y-4">
                   <a
-                    class="product-image"
+                    class="block aspect-[4/3] bg-stone-200/60 overflow-hidden relative"
                     href={
                       productSlug ? `/products/${productSlug}/` : "#collection"
                     }
@@ -99,316 +160,86 @@ const description =
                     {image ? (
                       <img
                         src={image}
-                        alt={data.thumbnail?.alternativeText || title}
+                        alt={(data.thumbnail as any)?.alternativeText || title}
                         loading="lazy"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                       />
                     ) : (
-                      <div class="image-placeholder">OUTLIER</div>
-                    )}
-                    {data.quantity && data.quantity <= 10 && (
-                      <span class="product-badge">LIMITED</span>
+                      <div class="w-full h-full flex items-center justify-center font-mono text-xs text-stone-400">
+                        No Preview
+                      </div>
                     )}
                   </a>
 
-                  <div class="product-info">
-                    <h3>{title}</h3>
-                    {data.seo?.metaDescription && (
-                      <p>{data.seo.metaDescription}</p>
-                    )}
-                    <div class="product-bottom">
-                      <strong>
-                        {price != null ? formatPrice(price) : "Ask for price"}
+                  <div class="space-y-2">
+                    <div class="flex justify-between items-baseline gap-4">
+                      <h3 class="font-serif text-lg font-normal text-stone-900 group-hover:text-stone-600 transition-colors">
+                        <a
+                          href={
+                            productSlug
+                              ? `/products/${productSlug}/`
+                              : "#collection"
+                          }
+                        >
+                          {title}
+                        </a>
+                      </h3>
+                      <strong class="font-mono text-sm font-semibold text-stone-900 whitespace-nowrap">
+                        {price != null ? formatPrice(price) : "Inquire"}
                       </strong>
-                      {productSlug && (
-                        <a href={`/products/${productSlug}/`}>View item ↗</a>
-                      )}
                     </div>
+
+                    {partDesc && (
+                      <p class="text-xs text-stone-500 line-clamp-2 leading-relaxed">
+                        {partDesc}
+                      </p>
+                    )}
+
+                    {productSlug && (
+                      <div class="pt-1">
+                        <a
+                          href={`/products/${productSlug}/`}
+                          class="font-mono text-[11px] text-stone-500 hover:text-stone-950 uppercase tracking-wider inline-flex items-center gap-1 transition-colors"
+                        >
+                          View details <span class="text-xs">↗</span>
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </article>
               );
             })}
           </div>
         ) : (
-          <p class="empty-state">
-            We're getting the next collection ready. Check back soon.
-          </p>
+          <div class="py-16 text-center font-mono text-xs text-stone-500 border border-dashed border-stone-300">
+            Catalog currently updating. Check back shortly.
+          </div>
         )
       }
     </section>
 
-    <!-- Editorial CTA -->
-    <section class="closing">
-      <p class="eyebrow">THE ART OF THE FIND</p>
-      <h2>Not everything needs<br />to be brand new.</h2>
-      <p>
-        Great products come from all kinds of places. We're here to help them
-        find their next home.
-      </p>
-      <a class="button button-light" href="mailto:hello@markket.place">
-        Get in touch
-      </a>
+    <!-- Closing Section -->
+    <section class="border-t border-stone-200 bg-stone-100 px-6 py-20">
+      <div class="max-w-2xl mx-auto text-center space-y-6">
+        <p class="font-mono text-xs text-stone-400 uppercase tracking-widest">
+          {(storeData.seo as any)?.metaTitle || storeData.title}
+        </p>
+
+        <div
+          class="text-stone-700 font-serif text-xl sm:text-2xl leading-relaxed whitespace-pre-line"
+        >
+          {description}
+        </div>
+
+        <div class="pt-4">
+          <a
+            class="inline-block px-7 py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-mono text-xs uppercase tracking-widest transition-colors"
+            href="/contact/"
+          >
+            Get In Touch
+          </a>
+        </div>
+      </div>
     </section>
   </main>
 </Layout>
-
-<style>
-  main {
-    color: #25251f;
-    background: #f8f7f3;
-  }
-
-  .hero {
-    min-height: 570px;
-    padding: 110px max(7vw, 24px) 32px;
-    background: #e9e7dc;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-  .hero-content {
-    max-width: 760px;
-  }
-
-  .eyebrow {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: #777466;
-  }
-
-  h1 {
-    font-family: Georgia, serif;
-    font-size: clamp(54px, 8vw, 100px);
-    line-height: 0.98;
-    letter-spacing: -0.055em;
-    font-weight: 400;
-    margin: 28px 0;
-  }
-
-  h1 em {
-    color: #777b56;
-    font-weight: 400;
-  }
-
-  .hero-description {
-    max-width: 460px;
-    color: #66665c;
-    font-size: 17px;
-    line-height: 1.7;
-    margin-bottom: 30px;
-  }
-
-  .button {
-    display: inline-block;
-    padding: 15px 23px;
-    background: #303328;
-    color: white;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-  }
-
-  .hero-note {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 28px;
-    border-top: 1px solid #c9c7bb;
-    padding-top: 18px;
-    margin-top: 80px;
-    font-size: 10px;
-    letter-spacing: 0.13em;
-    color: #777466;
-  }
-
-  .intro {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 110px 24px;
-    text-align: center;
-  }
-
-  .intro h2,
-  .section-heading h2,
-  .closing h2 {
-    font-family: Georgia, serif;
-    font-size: clamp(36px, 5vw, 56px);
-    line-height: 1.08;
-    letter-spacing: -0.04em;
-    font-weight: 400;
-    margin: 20px 0;
-  }
-
-  .intro > p:last-child,
-  .closing > p:not(.eyebrow) {
-    max-width: 550px;
-    margin: 0 auto;
-    color: #77766d;
-    line-height: 1.8;
-  }
-
-  .collection {
-    padding: 40px max(7vw, 24px) 120px;
-  }
-
-  .section-heading {
-    display: flex;
-    justify-content: space-between;
-    align-items: end;
-    gap: 20px;
-    margin-bottom: 35px;
-  }
-
-  .section-heading h2 {
-    margin-bottom: 0;
-  }
-
-  .section-heading > span {
-    font-size: 12px;
-    color: #77766d;
-    padding-bottom: 8px;
-  }
-
-  .product-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 36px 22px;
-  }
-
-  .product-card {
-    min-width: 0;
-  }
-
-  .product-image {
-    display: block;
-    position: relative;
-    overflow: hidden;
-    aspect-ratio: 4 / 5;
-    background: #eeede7;
-  }
-
-  .product-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.4s ease;
-  }
-
-  .product-image:hover img {
-    transform: scale(1.04);
-  }
-
-  .image-placeholder {
-    height: 100%;
-    display: grid;
-    place-items: center;
-    color: #a5a394;
-    letter-spacing: 0.2em;
-    font-size: 12px;
-  }
-
-  .product-badge {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background: #303328;
-    color: white;
-    padding: 7px 10px;
-    font-size: 9px;
-    letter-spacing: 0.12em;
-  }
-
-  .product-info {
-    padding-top: 15px;
-  }
-
-  .product-info h3 {
-    font-family: Georgia, serif;
-    font-weight: 400;
-    font-size: 20px;
-    margin: 0 0 7px;
-  }
-
-  .product-info p {
-    color: #858378;
-    font-size: 12px;
-    line-height: 1.6;
-  }
-
-  .product-bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-top: 15px;
-  }
-
-  .product-bottom strong {
-    font-size: 15px;
-  }
-
-  .product-bottom a {
-    font-size: 11px;
-    color: #777b56;
-    text-decoration: none;
-  }
-
-  .empty-state {
-    padding: 60px 20px;
-    background: #eeede7;
-    text-align: center;
-    color: #77766d;
-  }
-
-  .closing {
-    padding: 100px 24px;
-    text-align: center;
-    background: #303328;
-    color: #f8f7f3;
-  }
-
-  .closing .eyebrow {
-    color: #c3c5a7;
-  }
-
-  .closing h2 {
-    font-size: clamp(42px, 6vw, 68px);
-  }
-
-  .closing > p:not(.eyebrow) {
-    color: #c9c9bd;
-    margin-bottom: 30px;
-  }
-
-  .button-light {
-    background: #e9e7dc;
-    color: #303328;
-  }
-
-  @media (max-width: 760px) {
-    .hero {
-      min-height: 520px;
-      padding-top: 85px;
-    }
-
-    .hero-note {
-      gap: 12px 20px;
-    }
-
-    .product-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 28px 14px;
-    }
-
-    .product-info h3 {
-      font-size: 17px;
-    }
-
-    .product-bottom {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-  }
-</style>

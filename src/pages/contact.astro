@@ -15,15 +15,15 @@ const storeDescription = storeData.description || "";
 const email = `${storeData.slug}@markket.place`;
 ---
 
-<Layout title={`Contact | ${storeName}`} >
+<Layout title={`Contact | ${storeName}`}>
   <main class="contact-page">
     <section class="contact-intro">
       <p class="eyebrow">A note from the warehouse</p>
       <h1>Good things start<br />with a conversation.</h1>
 
       <p class="intro-copy">
-        Questions about an item, a bulk order, or something you spotted?
-        We'd love to hear from you.
+        Questions about an item, a bulk order, or something you spotted? We'd
+        love to hear from you.
       </p>
     </section>
 
@@ -36,18 +36,23 @@ const email = `${storeData.slug}@markket.place`;
 
       <div class="contact-details">
         <p class="eyebrow">Get in touch</p>
-        <a class="email" href={`mailto:${email}`}>{email}</a>
+        <a class="email" href={`/contact`}>{email}</a>
         <p class="small-copy">
           Send us a note and we'll get back to you as soon as we can.
         </p>
-        <a class="contact-button" href={`mailto:${email}?subject=${encodeURIComponent(`Hello, ${storeName}`)}`}>
+        <a
+          class="contact-button"
+          href={`mailto:${email}?subject=${encodeURIComponent(`Hello, ${storeName}`)}`}
+        >
           Write us an email <span aria-hidden="true">↗</span>
         </a>
       </div>
     </section>
 
     <p class="closing-note">
-      Independently curated. Powered by <a href="https://markket.place">Markkët</a>.
+      Independently curated. Powered by <a href="https://markket.place">
+        Markkët
+      </a>.
     </p>
   </main>
 </Layout>
@@ -75,7 +80,8 @@ const email = `${storeData.slug}@markket.place`;
     text-transform: uppercase;
   }
 
-  h1, h2 {
+  h1,
+  h2 {
     font-family: Georgia, "Times New Roman", serif;
     font-weight: 400;
   }

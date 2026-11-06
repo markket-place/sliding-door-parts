@@ -12,10 +12,6 @@ if (!store) throw new Error("Store not found.");
 
 const storeName = store.data.title || "Outlier";
 
-const activeProducts = products
-  // .filter(({ data }) => data.active === true)
-  .sort((a, b) => (a.data.name || "").localeCompare(b.data.name || ""));
-
 const getImage = (media: any) => {
   if (!media) return null;
   return media.formats?.medium?.url || media.url || null;
@@ -37,6 +33,7 @@ const formatPrice = (price: number | string) =>
   }}
 >
   <main>
+    {console.log({ id: products[0].id, data: products[0].data })}
     <header class="page-heading">
       <a href="/">← Back to home</a>
       <p class="eyebrow">THE COLLECTION</p>
@@ -45,17 +42,16 @@ const formatPrice = (price: number | string) =>
         Explore the current selection. Inventory changes, quantities are
         limited, and every find has a story.
       </p>
-      <span>{activeProducts.length} products</span>
+      <span>{products.length} products</span>
     </header>
 
     <section class="catalog">
       {
-        activeProducts.length > 0 ? (
+        products.length > 0 ? (
           <div class="product-grid">
-            {activeProducts.map(({ data }) => {
+            {products.map(({ data, id }) => {
               const image = getImage(data.thumbnail);
-              const title =
-                data.name || data.seo?.metaTitle || "Untitled product";
+              const title = data.name || data.seo?.metaTitle || "* * *";
               const price = data.usd_price ?? data.prices?.[0]?.price;
               const slug = data.slug;
 
@@ -76,7 +72,7 @@ const formatPrice = (price: number | string) =>
                     )}
                   </a>
 
-                  <div class="product-info">
+                  <div class={`product-info ${id}`}>
                     <h2>{title}</h2>
                     {data.description && <p>{data.description}</p>}
                     <div class="product-bottom">
@@ -87,9 +83,6 @@ const formatPrice = (price: number | string) =>
                       </strong>
                       {slug && <a href={`/products/${slug}/`}>View item ↗</a>}
                     </div>
-                    {data.quantity > 0 && data.quantity <= 10 && (
-                      <small>Only {data.quantity} remaining</small>
-                    )}
                   </div>
                 </article>
               );
