@@ -2,27 +2,29 @@
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import CheckoutModal from "../../components/CheckoutModal";
+import type { CollectionEntry } from "astro:content";
 
 export async function getStaticPaths() {
   const products = await getCollection("products");
-  return products.map((p) => ({ params: {
-    slug: p.data?.slug || p.id
-  } }));
+  return products.map((p) => ({
+    params: {
+      slug: p.data?.slug || p.id,
+    },
+    props: {
+      product: p,
+    },
+  }));
 }
 
-const { slug } = Astro.params;
+interface Props {
+  product: CollectionEntry<"products">;
+}
 
-const [products, stores] = await Promise.all([
-  getCollection("products"),
-  getCollection("stores"),
-]);
+const { product } = Astro.props;
 
-const product = products.find(({ data }) => data.slug === slug);
+const [stores] = await Promise.all([getCollection("stores")]);
+
 const store = stores[0];
-
-if (!product) {
-  throw new Error(`Product not found: ${slug}`);
-}
 
 if (!store) {
   throw new Error("Store not found. Check PUBLIC_STORE_SLUG.");
@@ -32,54 +34,37 @@ const data = product.data;
 const storeData = store.data;
 const hasCheckout = !!data.sku;
 
-const title =
-  data.name?.trim() ||
-  data.seo?.metaTitle ||
-  "Untitled product";
+const title = data.name?.trim() || data.seo?.metaTitle || "Untitled product";
 
-const description =
-  data.description ||
-  data.seo?.metaDescription ||
-  "";
+const description = data.description || data.seo?.metaDescription || "";
 
-const price =
-  data.usd_price ?? data.prices?.[0]?.price ?? null;
+const price = data.usd_price ?? data.prices?.[0]?.price ?? null;
 
 const validPrices = (data.prices || []).filter(
   (item) =>
-    item &&
-    item.stripe_id &&
-    Number(item.price) > 0 &&
-    item.hidden !== true
+    item && item.stripe_id && Number(item.price) > 0 && item.hidden !== true,
 );
 
 const imageUrl = (media) => {
   if (!media) return null;
 
   const url =
-    media.formats?.large?.url ||
-    media.formats?.medium?.url ||
-    media.url;
+    media.formats?.large?.url || media.formats?.medium?.url || media.url;
 
   if (!url) return null;
 
-  return url.startsWith("http")
-    ? url
-    : `https://api.markket.place${url}`;
+  return url.startsWith("http") ? url : `https://api.markket.place${url}`;
 };
 
 const thumbnail = imageUrl(data.thumbnail);
 
 const gallery = [
   ...(thumbnail ? [thumbnail] : []),
-  ...(data.slides || [])
-    .map((slide) => imageUrl(slide))
-    .filter(Boolean),
+  ...(data.slides || []).map((slide) => imageUrl(slide)).filter(Boolean),
 ].filter((url, index, array) => array.indexOf(url) === index);
-
 ---
 
-<Layout title={` ${data.name} | ${storeData.title}`}}>
+<Layout title={` ${data.name} | ${storeData.title}`} }>
   <main class="product-page">
     <a href="/products/" class="back-link">
       <span aria-hidden="true">←</span> Back to the collection
@@ -87,41 +72,38 @@ const gallery = [
 
     <div class="product-layout">
       <section class="gallery" aria-label="Product images">
-        {gallery.length > 0 ? (
-          <>
-            <div class="main-image">
-            <img
-              id="main-product-image"
-              src={gallery[0]}
-              alt={title}
-            />
-          </div>
-          {gallery.length > 1 && (
-            <div class="thumbnails">
-              {gallery.map((image, index) => (
-                <button
-                  class:list={["thumbnail", { selected: index === 0 }]}
-                  type="button"
-                  data-image={image}
-                  aria-label={`View image ${index + 1}`}
-                  aria-pressed={index === 0 ? "true" : "false"}
-                >
-                  <img
-                    src={image}
-                    alt={`${title}, view ${index + 1}`}
-                    loading="lazy"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-
-          </>
+        {
+          gallery.length > 0 ? (
+            <>
+              <div class="main-image">
+                <img id="main-product-image" src={gallery[0]} alt={title} />
+              </div>
+              {gallery.length > 1 && (
+                <div class="thumbnails">
+                  {gallery.map((image, index) => (
+                    <button
+                      class:list={["thumbnail", { selected: index === 0 }]}
+                      type="button"
+                      data-image={image}
+                      aria-label={`View image ${index + 1}`}
+                      aria-pressed={index === 0 ? "true" : "false"}
+                    >
+                      <img
+                        src={image}
+                        alt={`${title}, view ${index + 1}`}
+                        loading="lazy"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           ) : (
-          <div class="image-placeholder">
-            A good find, waiting to be pictured.
-          </div>
-        )}
+            <div class="image-placeholder">
+              A good find, waiting to be pictured.
+            </div>
+          )
+        }
       </section>
 
       <section class="product-info">
@@ -129,36 +111,38 @@ const gallery = [
 
         <h1>{title}</h1>
 
-        {price !== null && Number(price) > 0 && (
-          <p class="price">${Number(price).toFixed(2)}</p>
-        )}
+        {
+          price !== null && Number(price) > 0 && (
+            <p class="price">${Number(price).toFixed(2)}</p>
+          )
+        }
 
-        {description && (
-          <div class="description">{description}</div>
-        )}
+        {description && <div class="description">{description}</div>}
 
-        { hasCheckout ? (
-          <div class="checkout-box">
-            <CheckoutModal
-              client:load
-              prices={validPrices}
-              product={product}
-              store={store}
-            />
-          </div>
-        ) : (
-          <>
-            <p class="availability">
-              {data.active === true
-                ? "Interested in this item? Get in touch for pricing and availability."
-                : "Availability and pricing are confirmed individually."}
-            </p>
+        {
+          hasCheckout ? (
+            <div class="checkout-box">
+              <CheckoutModal
+                client:load
+                prices={validPrices}
+                product={product}
+                store={store}
+              />
+            </div>
+          ) : (
+            <>
+              <p class="availability">
+                {data.active === true
+                  ? "Interested in this item? Get in touch for pricing and availability."
+                  : "Availability and pricing are confirmed individually."}
+              </p>
 
-            <a class="buy-button" href={inquiryUrl}>
-              Enquire about this item <span>↗</span>
-            </a>
-          </>
-        )}
+              <a class="buy-button" href={"/contact"}>
+                Enquire about this item <span>↗</span>
+              </a>
+            </>
+          )
+        }
 
         <p class="product-note">
           Unique finds, limited quantities. Questions about this item?
@@ -171,12 +155,10 @@ const gallery = [
 
 <script>
   const mainImage = document.querySelector<HTMLImageElement>(
-    "#main-product-image"
+    "#main-product-image",
   );
 
-  const thumbnails = document.querySelectorAll<HTMLButtonElement>(
-    ".thumbnail"
-  );
+  const thumbnails = document.querySelectorAll<HTMLButtonElement>(".thumbnail");
 
   thumbnails.forEach((button) => {
     button.addEventListener("click", () => {
