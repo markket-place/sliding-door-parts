@@ -73,8 +73,10 @@ function strapiLoader(query: StrapiQueryOptions) {
         store.clear();
         for (const item of items) {
           const dataPayload = item.attributes ? { id: item.id, ...item.attributes } : item;
+          console.log(`${query.contentType}:${dataPayload.documentId}`);
+
           store.set({
-            id: String(item.id),
+            id: String(item.documentId),
             data: dataPayload,
           });
         }
@@ -87,25 +89,6 @@ function strapiLoader(query: StrapiQueryOptions) {
     },
   };
 }
-
-const stores = defineCollection({
-  loader: strapiLoader({
-    contentType: "store",
-    filter: `filters[slug][$eq]=${markket.slug}`,
-    populate: "seo.socialImage,logo,urls,favicon,seo",
-  }),
-  schema: baseStrapiSchema
-});
-
-const products = defineCollection({
-  loader: strapiLoader({
-    contentType: "product",
-    filter: `filters[stores][slug][$eq]=${markket.slug}`,
-    sort: "slug:DESC",
-    populate: "seo,seo.socialImage,thumbnail,slides,prices",
-  }),
-  schema: baseStrapiSchema
-});
 
 const seoSchema = z
   .object({
@@ -155,6 +138,37 @@ const pagesCollection = defineCollection({
   schema: z.union([paginatedCollectionSchema, pageSchema]),
 });
 
+
+
+
+// DEFINE MARKKET COLLECTIONS; //
+const stores = defineCollection({
+  loader: strapiLoader({
+    contentType: "store",
+    filter: `filters[slug][$eq]=${markket.slug}`,
+    populate: "seo.socialImage,logo,urls,favicon,seo",
+    paginate: {
+      limit: 100,
+    }
+  }),
+  schema: baseStrapiSchema
+});
+
+const products = defineCollection({
+  loader: strapiLoader({
+    contentType: "product",
+    filter: `filters[stores][slug][$eq]=${markket.slug}`,
+    sort: "updatedAt:DESC",
+    populate: "seo,seo.socialImage,thumbnail,slides,prices",
+    paginate: {
+      limit: 100,
+    }
+  }),
+  schema: baseStrapiSchema
+});
+
+
+// eXPORT //
 export const collections = {
   blog: blogCollection,
   pages: pagesCollection,
